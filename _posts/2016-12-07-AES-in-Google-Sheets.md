@@ -28,13 +28,13 @@ AES uses four basic operations, grouped in rounds. The number of rounds depends 
 
 Since I implemented AES-128 in Google Sheets, that is what we will be looking at specifically.
 
-For AES-128, there are 10 rounds, plus an initial round that only has the AddRoundKey step.
+For AES-128, there are 10 rounds, plus an initial round that only has the AddRoundKey step. The final round does not have a MixColumns step.
 
 Below is a diagram of a round for both encryption and decryption.
 
 ![AES diagram](http://i.stack.imgur.com/SnHH2.png)
 
-AES-128 requires a key of 128-bits (16 bytes) and a plaintext of 128-bits (16 bytes). This is because AES is a *block* cipher, not a *stream* cipher. A stream cipher can operate on data of variable size. Because AES is a block cipher, the data MUST be padded to a length of 16 bytes.
+AES-128 requires a key with a size of 128-bits (16 bytes) and a plaintext with a size of 128-bits (16 bytes). This is because AES is a *block* cipher, not a *stream* cipher. A stream cipher can operate on data of variable size, while block ciphers can only operate of blocks of data. Because AES is a block cipher, the data MUST be padded to a length of 16 bytes.
 
 AES-128 also has different operating modes: CBC, ECB, CTR, OCB, and CFB. The only mode we care about is ECB, or Electronic Code Book, because it is one of the easiest methods to implement. Other AES-128 operating modes require an IV (initialization vector), which increases the complexity of encrypting and decrypting.
 
@@ -48,7 +48,7 @@ The bytes in the plaintext and key are arranged in a 4x4 matrix, top to bottom, 
 33 77 BB FF
 ```
 
-## Prerequisite Stuff
+## Important stuff to know
 
 ### sbox and inverse sbox
 A sbox is a table that takes an input value, looks it up, and outputs another value. The the inverse sbox takes the output from the sbox, and restores it to the original input value.
