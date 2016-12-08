@@ -100,13 +100,13 @@ For AES-128, we need to expand a 128-bit key to 11 different 128-bit keys
 
 The first key is always the input key.
 
-To generate the rest of the keys, follow the following steps:
-1. For the first column, take the last column of the previous key and rotate by moving everything up by one.
-2. Use the sbox to substitute the bytes
-3. XOR that by the first column and the round constant
-4. For the second column, take the new first column and XOR it with the second column of the previous key.
-5. For the third column, take the new second column and XOR it with the third column of the previous key.
-6. For the last column, take the new third column and XOR it with the last column of the previous key.
+To generate the rest of the keys, follow the following steps:<br />
+1. For the first column, take the last column of the previous key and rotate by moving everything up by one.<br />
+2. Use the sbox to substitute the bytes<br />
+3. XOR that by the first column and the round constant<br />
+4. For the second column, take the new first column and XOR it with the second column of the previous key.<br />
+5. For the third column, take the new second column and XOR it with the third column of the previous key.<br />
+6. For the last column, take the new third column and XOR it with the last column of the previous key.<br />
 
 ## Operations
 
