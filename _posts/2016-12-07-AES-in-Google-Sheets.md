@@ -41,7 +41,7 @@ The bytes in the plaintext and key are arranged in a 4x4 matrix, top to bottom, 
 33 77 BB FF
 ```
 
-## Terminalogy
+## Prerequisite Stuff
 ### sbox and inverse sbox
 A sbox is a table that takes an input value, looks it up, and outputs another value. The the inverse sbox takes the output from the sbox, and restores it to the original input value.
 
@@ -88,6 +88,15 @@ public byte FFMul(unsigned byte a, unsigned byte b) {
    return r;
 }
 ```
+
+### rcon
+The rcon, or round constant, is a constant number for each round. It is simply defined as 2^n, where n is the round number. This is important for generating the key schedule, which is explained next.
+
+### Key Schedule
+Each round of AES uses a different key. Each key is derived from the previous key, and so the key schedule changes based on the input key.
+
+For AES-128, we need to expand a 128-bit key to 10 different 128-bit keys
+
 ## Operations
 ### SubBytes
 SubBytes is one of the most simple operations. Here, we simply replace each byte with the corresponding value in the sbox.
@@ -120,3 +129,26 @@ This step is an example of a transposition cipher, which merely moves around byt
 During decryption, the direction of the shift would be reversed.
 
 ### MixColumns
+MixColumns is a very important, yet hard step to calculate. This is where knowledge of the Galois Field and general matrix multiplication is necessary.
+
+The Rijndael Galois Field is defined as:
+
+![Rijndael Galois Field](https://wikimedia.org/api/rest_v1/media/math/render/svg/643fda02841bc799fa769c18670206ab7dde8524)
+
+The MixColumns step operates on one column at a time (as the name suggests). b is the output column, and a is the corresponding columns in the input matrix.
+
+To calculate a value in this step, use the standard matrix multiplication rules and multiply Rijndael's Galois Field with the input "column", except that multiplication still follows the rules of multiplication in a finite field.
+
+![Rijndael MixColumns](https://wikimedia.org/api/rest_v1/media/math/render/svg/692b64470b3c92b2b88a245f1de14f481668d20a)
+
+Or, to put it another way:
+
+![](https://wikimedia.org/api/rest_v1/media/math/render/svg/d87b0911a654fa7fa7fcc8f0d49f32b763a27c26)<br />
+![](https://wikimedia.org/api/rest_v1/media/math/render/svg/73390ae5901029c3502f3b4d65357140f5f0b921)<br />
+![](https://wikimedia.org/api/rest_v1/media/math/render/svg/43766345980b7bb305ebe271ad1e4088b1033609)<br />
+![](https://wikimedia.org/api/rest_v1/media/math/render/svg/01f3e27f3fb392d30ff92f99c41b06f33721b5f9)
+
+b<sub>0</sub> is the result of the MixColumns operation, and a<sub>0</sub> is the corresponding cell of the input.
+
+### AddRoundKey
+This step combines the round key
