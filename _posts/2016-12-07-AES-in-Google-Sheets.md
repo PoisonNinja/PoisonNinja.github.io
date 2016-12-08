@@ -164,3 +164,8 @@ b<sub>0</sub> is the result of the MixColumns operation, and a<sub>0</sub> is th
 
 ### AddRoundKey
 This step combines the round key with the current data (or state) using an XOR operation.
+
+# Implementation in Google Sheets/Excel
+For this, there were two main concerns: speed and accuracy. I will not go over every single detail, but instead go over some of the optimizations and quirks I had to deal with.
+
+## Fast XOR
