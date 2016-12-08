@@ -19,6 +19,8 @@ In 2003, the US government officially announced that AES could be used to protec
 
 Today, AES is one of the most popular block ciphers in existence due to it's high performance and security it provides. AES is implemented in nearly every language, and hardware acceleration is available on most processors. On x86, acceleration is provided by the AES-NI instruction set.
 
+![](https://datacenteroverlords.files.wordpress.com/2011/09/aes-graph3.png)
+
 AES is currently unbroken, with the only possible attacks based on attacking side-channel implementations. This means that the only attacks that work are on the implementation of AES such as hardware glitches and timing attacks. Otherwise, brute forcing AES would take more time then the current age of the universe.
 
 # AES implementation
