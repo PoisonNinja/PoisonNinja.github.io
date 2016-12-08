@@ -34,6 +34,7 @@ AES-128 requires a key of 128-bits (16 bytes) and a plaintext of 128-bits (16 by
 
 ## Byte organization
 The bytes in the plaintext and key are arranged in a 4x4 matrix, top to bottom, left to right. For example, 00112233445566778899AABBCCDDEEFF becomes
+
 ```
 00 44 88 CC
 11 55 99 DD
@@ -69,6 +70,7 @@ Addition is defined as "adding two of these polynomials together, and reducing t
 When the characteristic is 2, addition is simply just XORing the the values together.
 
 Multiplication in a finite field is much more complicated. First, multiply the numbers normally, such as in algebra. Then, divide that (because it won't fit into an 8 bit field) by a fixed number, known as an irreducible polynomial.
+
 ```
 x8 + x4 + x3 + x + 1 = 0x11b
 ```
@@ -76,6 +78,7 @@ x8 + x4 + x3 + x + 1 = 0x11b
 We divde the product of the two input numbers by this polynomial, and the remainder of the division is our product.
 
 In Java:
+
 ```
 public byte FFMul(unsigned byte a, unsigned byte b) {
    unsigned byte aa = a, bb = b, r = 0, t;
@@ -116,6 +119,7 @@ To generate the rest of the keys, follow the following steps:<br />
 SubBytes is one of the most simple operations. Here, we simply replace each byte with the corresponding value in the sbox.
 
 For example:
+
 ```
 00 71 07 16
 11 73 11 0B
@@ -124,6 +128,7 @@ For example:
 ```
 
 becomes
+
 ```
 63 A3 C5 47
 82 8F 82 2B
@@ -153,9 +158,9 @@ To calculate a value in this step, use the standard matrix multiplication rules 
 
 Or, to put it another way:
 
-![](https://wikimedia.org/api/rest_v1/media/math/render/svg/d87b0911a654fa7fa7fcc8f0d49f32b763a27c26)<br />
-![](https://wikimedia.org/api/rest_v1/media/math/render/svg/73390ae5901029c3502f3b4d65357140f5f0b921)<br />
-![](https://wikimedia.org/api/rest_v1/media/math/render/svg/43766345980b7bb305ebe271ad1e4088b1033609)<br />
+![](https://wikimedia.org/api/rest_v1/media/math/render/svg/d87b0911a654fa7fa7fcc8f0d49f32b763a27c26)
+![](https://wikimedia.org/api/rest_v1/media/math/render/svg/73390ae5901029c3502f3b4d65357140f5f0b921)
+![](https://wikimedia.org/api/rest_v1/media/math/render/svg/43766345980b7bb305ebe271ad1e4088b1033609)
 ![](https://wikimedia.org/api/rest_v1/media/math/render/svg/01f3e27f3fb392d30ff92f99c41b06f33721b5f9)
 
 b<sub>0</sub> is the result of the MixColumns operation, and a<sub>0</sub> is the corresponding cell of the input.
@@ -353,8 +358,8 @@ The formula used for each cell in the MixColumns step is as follows:
 It looks really long, but most of it is overhead from the fast XOR method.
 
 Breaking it down:
-1. We first find the results of the multiplication using VLOOKUP (`VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE)`)
-2. We then XOR it using our fast XOR method (`VLOOKUP(LEFT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&LEFT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&RIGHT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)`)
+1. We first find the results of the multiplication using VLOOKUP (`VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE)`)<br />
+2. We then XOR it using our fast XOR method (`VLOOKUP(LEFT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&LEFT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&RIGHT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)`)<br />
 3. We then XOR it with the other parts, because that's how addition in a Galois Field works.
 
 ## AddRoundKey
