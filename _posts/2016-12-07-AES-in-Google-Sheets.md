@@ -96,7 +96,17 @@ The rcon, or round constant, is a constant number for each round. It is simply d
 ### Key Schedule
 Each round of AES uses a different key. Each key is derived from the previous key, and so the key schedule changes based on the input key.
 
-For AES-128, we need to expand a 128-bit key to 10 different 128-bit keys
+For AES-128, we need to expand a 128-bit key to 11 different 128-bit keys
+
+The first key is always the input key.
+
+To generate the rest of the keys, follow the following steps:
+1. For the first column, take the last column of the previous key and rotate by moving everything up by one.
+2. Use the sbox to substitute the bytes
+3. XOR that by the first column and the round constant
+4. For the second column, take the new first column and XOR it with the second column of the previous key.
+5. For the third column, take the new second column and XOR it with the third column of the previous key.
+6. For the last column, take the new third column and XOR it with the last column of the previous key.
 
 ## Operations
 
@@ -153,4 +163,4 @@ Or, to put it another way:
 b<sub>0</sub> is the result of the MixColumns operation, and a<sub>0</sub> is the corresponding cell of the input.
 
 ### AddRoundKey
-This step combines the round key
+This step combines the round key with the current data (or state) using an XOR operation.
