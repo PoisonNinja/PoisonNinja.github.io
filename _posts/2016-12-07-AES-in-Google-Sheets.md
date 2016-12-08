@@ -6,18 +6,20 @@ title: AES-128 in Google Sheets
 # What is AES?
 AES, or the Advanced Encryption Standard, is a encryption standard established by the National Institute of Standards (NIST).
 
-Rijndael is the specific algorithm used in AES. It is a symmetric block cipher, meaning that it operates on blocks of data and can encrypt and decrypt data using only one key (as opposed to asymmetrical encryption, which needs a public and a private key).
+Rijndael is the specific algorithm used in AES. It is a symmetrical block cipher, meaning that it operates on blocks of data and can encrypt and decrypt data using only one key (as opposed to asymmetrical encryption, which needs a public and a private key).
 
 ## Brief History
-AES was created in 1997 through a competition hosted by the National Institute of Standards and Technology (NIST), which wanted to replace the Data Encryption Standard (DES).
+AES was created in 1997 through a competition created by the National Institute of Standards and Technology (NIST), which wanted to replace the Data Encryption Standard (DES).
 
 DES was already proven to be insecure, and NIST needed a new algorithm that was "an unclassified, publicly disclosed encryption algorithm capable of protecting sensitive government information well into the next century". Several groups submitted algorithms to the competition. Submitted ciphers were evaluated by the NSA for speed, security, and feasibility on low powered devices (smart cards, etc.).
 
-Eventually, an algorithm submitted by Belgians Joan Daemen and Vincent Rijmen, called Rijndael was selected. Specifically, three variants, 128-bit, 192-bit, and 256-bit, were chosen. Eventually, it would become U.S. FIPS PUB 197.
+Eventually, an algorithm submitted by Belgian cryptographers Joan Daemen and Vincent Rijmen, called Rijndael (a combination of their last names) was selected. Specifically, three variants with different key sizes, 128-bit, 192-bit, and 256-bit, were chosen. Eventually, it would become U.S. FIPS PUB 197.
 
 In 2003, the US government officially announced that AES could be used to protect confidential information, and was used by the NSA to encrypt important documents.
 
-Today, AES is one of the most popular block ciphers in existence due to it's high performance and security it provides.
+Today, AES is one of the most popular block ciphers in existence due to it's high performance and security it provides. AES is implemented in nearly every language, and hardware acceleration is available on most processors. On x86, acceleration is provided by the AES-NI instruction set.
+
+AES is currently unbroken, with the only possible attacks based on attacking side-channel implementations. This means that the only attacks that work are on the implementation of AES such as hardware glitches and timing attacks. Other attacks are able to reduce the key space slightly from 2^128 to slightly lower, but brute forcing it would still take more time than the age of the universe.
 
 # AES implementation
 AES uses four basic operations, grouped in rounds. The number of rounds depends on the AES bit size. The higher bit size, the more rounds.
@@ -30,7 +32,9 @@ Below is a diagram of a round for both encryption and decryption.
 
 ![AES diagram](http://i.stack.imgur.com/SnHH2.png)
 
-AES-128 requires a key of 128-bits (16 bytes) and a plaintext of 128-bits (16 bytes)
+AES-128 requires a key of 128-bits (16 bytes) and a plaintext of 128-bits (16 bytes). This is because AES is a *block* cipher, not a *stream* cipher. A stream cipher can operate on data of variable size. Because AES is a block cipher, the data MUST be padded to a length of 16 bytes.
+
+AES-128 also has different operating modes: CBC, ECB, CTR, OCB, and CFB. The only mode we care about is ECB, or Electronic Code Book, because it is one of the easiest methods to implement. Other AES-128 operating modes require an IV (initialization vector), which increases the complexity of encrypting and decrypting.
 
 ## Byte organization
 The bytes in the plaintext and key are arranged in a 4x4 matrix, top to bottom, left to right. For example, 00112233445566778899AABBCCDDEEFF becomes
@@ -58,14 +62,16 @@ A basic operation that operates on the binary level. It is only true if and only
 
 ![XOR Truth Table](http://www.electronicshub.org/wp-content/uploads/2015/07/TRUTH-TABLE-1.jpg)
 
-XOR is really important in cryptography because XOR is an easily reversible operation. Let's say we have 0xDE. If I XOR that by 0xAD, I get 0x73. Now, if I XOR 0x73 by 0xAD, I get 0xDE, which is my original number. Interestingly, if I XOR 0x73 by 0xDE, I get 0xAD, which is what I XORed 0xDE by.
+XOR is really important in cryptography because XOR is an easily reversible operation. Let's say we have a number: 0xDE. Now, let's pretend that 0xAD is my encryption key. If I XOR 0xDE by 0xAD, I get 0x73. 0x73 is my ciphertext. Now, if I XOR that by the key (0xAD) again, I get 0xDE, which is my original number. Interestingly, if I XOR 0x73 by 0xDE, I get 0xAD, which is what I XORed 0xDE by.
 
 ### Galois / Finite Field
-In simple terms, a Galois Finite Field is a matrix that has a maximum limit before values wrap around. Finite fields are defined by the equation p^k, where p is a prime and k is a positive integer. p is the characteristic of the finite field, because adding p copies of any number is equal to 0. Finite fields can also be identified in the notation GF(x), where x is equal to p^k.
+In simple terms, a Finite Field is a matrix that has a maximum limit before values wrap around. Finite fields are defined by the equation p^k, where p is a prime and k is a positive integer. p is the characteristic of the finite field, because adding p copies of any number is equal to 0.
 
-There are only two operations: addition and multiplication.
+A Galois Field is a finite field with characteristic 2. Galois Fields can be identified in the notation GF(x), where x is equal to 2^k.
 
-Addition is defined as "adding two of these polynomials together, and reducing the result modulo the characteristic." In AES, the Galois field is defined as GF(256), or 2^8. Therefore, the characteristic is 2.
+There are only two operations in a finite field: addition and multiplication.
+
+Addition is defined as "adding two of these polynomials together, and reducing the result modulo the characteristic." In AES, the Galois field is defined as GF(256), or 2^8.
 
 When the characteristic is 2, addition is simply just XORing the the values together.
 
@@ -75,7 +81,7 @@ Multiplication in a finite field is much more complicated. First, multiply the n
 x8 + x4 + x3 + x + 1 = 0x11b
 ```
 
-We divde the product of the two input numbers by this polynomial, and the remainder of the division is our product.
+We then divide the product of the two input numbers by this polynomial, and the remainder of the division is our product.
 
 In Java:
 
@@ -96,17 +102,17 @@ public byte FFMul(unsigned byte a, unsigned byte b) {
 ```
 
 ### rcon
-The rcon, or round constant, is a constant number for each round. It is simply defined as 2^n, where n is the round number. This is important for generating the key schedule, which is explained next.
+The rcon, or round constant, is a constant number that is different for each round. It is simply defined as 2^n, where n is the round number. This is important for generating the key schedule, which is explained next.
 
 ### Key Schedule
 Each round of AES uses a different key. Each key is derived from the previous key, and so the key schedule changes based on the input key.
 
 For AES-128, we need to expand a 128-bit key to 11 different 128-bit keys
 
-The first key is always the input key.
+*The first key is always the input key.*
 
-To generate the rest of the keys, follow the following steps:<br />
-1. For the first column, take the last column of the previous key and rotate by moving everything up by one.<br />
+To generate the rest of the keys, follow the steps:<br />
+1. For the first column of the new key, take the last column of the previous key and rotate by moving everything up by one.<br />
 2. Use the sbox to substitute the bytes<br />
 3. XOR that by the first column and the round constant<br />
 4. For the second column, take the new first column and XOR it with the second column of the previous key.<br />
@@ -194,6 +200,9 @@ For this, there were two main concerns: speed and accuracy. I will not go over e
 * HEX2DEC - Converts a decimal number to a hex string
 * DEC2HEX - Converts a hexadecimal string to a number
 * The & operator - It concats two strings together. For example, "A" & "B" becomes "AB"
+* CONCATENATE - Concatenates any number of strings together
+* CHAR - Convert a number into a character
+* CODE - Convert a character into a number
 
 ## Fast XOR
 There are two ways to do XOR in Google Sheets.
