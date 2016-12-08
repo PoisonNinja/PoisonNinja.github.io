@@ -439,6 +439,7 @@ XOR(F20, G16)
 
 # Resources
 Below are links to some websites I found useful:
+
 * [Wikipedia page for AES](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard)
 * [AES Animation](http://www.formaestudio.com/rijndaelinspector/archivos/Rijndael_Animation_v4_eng.swf)
 * [The Laws of Encryption](http://www.cs.utsa.edu/~wagner/laws/)
