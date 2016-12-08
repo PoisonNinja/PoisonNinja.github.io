@@ -87,7 +87,7 @@ We then divide the product of the two input numbers by this polynomial, and the 
 
 In Javascript:
 
-```
+```Javascript
 /*
  * Multiply two values in a Galois Field of size 2^8
  * @param {Number} a - A hexadecimal number to multiply
@@ -224,7 +224,7 @@ There are two ways to do XOR in Google Sheets.
 
 The first method is using a Google Script:
 
-```
+```Javascript
 /*
  * XOR two numbers
  * @param {Number} a - A hexadecimal number to XOR
@@ -238,7 +238,7 @@ function XOR(a, b) {
 
 This function is incredibly simple. Ignoring the conversion functions, we get
 
-```
+```Javascript
 function XOR(a, b) {
     return a ^ b;
 }
