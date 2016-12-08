@@ -13,9 +13,9 @@ AES was created in 1997 through a competition hosted by the National Institute o
 
 DES was already proven to be insecure, and NIST needed a new algorithm that was "an unclassified, publicly disclosed encryption algorithm capable of protecting sensitive government information well into the next century". Several groups submitted algorithms to the competition. Submitted ciphers were evaluated by the NSA for speed, security, and feasibility on low powered devices (smart cards, etc.).
 
-Eventually, an algorithm submitted by Belgians Joan Daemen and Vincent Rijmen, called Rijndael. Eventually, it would become U.S. FIPS PUB 197.
+Eventually, an algorithm submitted by Belgians Joan Daemen and Vincent Rijmen, called Rijndael was selected. Specifically, three variants, 128-bit, 192-bit, and 256-bit, were chosen. Eventually, it would become U.S. FIPS PUB 197.
 
-In 2003, the US government announced that AES could be used to protect confidential information, and was used by the NSA to store important documents.
+In 2003, the US government officially announced that AES could be used to protect confidential information, and was used by the NSA to encrypt important documents.
 
 Today, AES is one of the most popular block ciphers in existence due to it's high performance and security it provides.
 
@@ -57,6 +57,8 @@ A basic operation that operates on the binary level. It is only true if and only
 
 ![XOR Truth Table](http://www.electronicshub.org/wp-content/uploads/2015/07/TRUTH-TABLE-1.jpg)
 
+XOR is really important in cryptography because XOR is an easily reversible operation. Let's say we have 0xDE. If I XOR that by 0xAD, I get 0x73. Now, if I XOR 0x73 by 0xAD, I get 0xDE, which is my original number. Interestingly, if I XOR 0x73 by 0xDE, I get 0xAD, which is what I XORed 0xDE by.
+
 ### Galois / Finite Field
 In simple terms, a Galois Finite Field is a matrix that has a maximum limit before values wrap around. Finite fields are defined by the equation p^k, where p is a prime and k is a positive integer. p is the characteristic of the finite field, because adding p copies of any number is equal to 0. Finite fields can also be identified in the notation GF(x), where x is equal to p^k.
 
@@ -66,12 +68,12 @@ Addition is defined as "adding two of these polynomials together, and reducing t
 
 When the characteristic is 2, addition is simply just XORing the the values together.
 
-Multiplication in a finite field is much more complicated. First, multiply the numbers normally, such as in algebra. Then, divide that (because it won't fit into an 8 bit field) by a fixed number, known as an irreducible polynomial. I have to admit that this is a little beyond my math level, but here it is:
+Multiplication in a finite field is much more complicated. First, multiply the numbers normally, such as in algebra. Then, divide that (because it won't fit into an 8 bit field) by a fixed number, known as an irreducible polynomial.
 ```
 x8 + x4 + x3 + x + 1 = 0x11b
 ```
 
-We divde the product of those two numbers by this polynomial, and the remainder is our product.
+We divde the product of the two input numbers by this polynomial, and the remainder of the division is our product.
 
 In Java:
 ```
@@ -113,8 +115,6 @@ To generate the rest of the keys, follow the following steps:<br />
 ### SubBytes
 SubBytes is one of the most simple operations. Here, we simply replace each byte with the corresponding value in the sbox.
 
-For decryption, we replace each byte with the corresponding byte in the inverse sbox.
-
 For example:
 ```
 00 71 07 16
@@ -137,8 +137,6 @@ ShiftRows is another easy operations. The rows in the matrix each shift by a pre
 In AES, the first row is left unchanged. The second row is shifted by one byte to the left. The third row is shifted by two bytes to the left, and the fourth row is shifted by three bytes.
 
 This step is an example of a transposition cipher, which merely moves around bytes instead of modifying them.
-
-During decryption, the direction of the shift would be reversed.
 
 ### MixColumns
 MixColumns is a very important, yet hard step to calculate. This is where knowledge of the Galois Field and general matrix multiplication is necessary.
@@ -165,7 +163,93 @@ b<sub>0</sub> is the result of the MixColumns operation, and a<sub>0</sub> is th
 ### AddRoundKey
 This step combines the round key with the current data (or state) using an XOR operation.
 
+## Decryption
+In general, to decrypt, we do the inverse of each operation.
+
+### SubBytes
+Instead of substituting bytes in the sbox, we use the inverse sbox to replace bytes.
+
+### ShiftRows
+We reverse the direction of the rotation, so instead of rotating left, we rotate right. However, the rotation length remains the same.
+
+### MixColumns
+Same operations as before, except we multiply using a different Galois Field.
+
+![Inverse Galois Field](https://wikimedia.org/api/rest_v1/media/math/render/svg/8be23b0626cd4e6c54cc39f476e8a0b7fb0c18da)
+
+This will restore each value back to the original.
+
+### AddRoundKey
+AddRoundKey remains the same (XOR property, remember).
+
 # Implementation in Google Sheets/Excel
 For this, there were two main concerns: speed and accuracy. I will not go over every single detail, but instead go over some of the optimizations and quirks I had to deal with.
 
 ## Fast XOR
+There are two ways to do XOR in Google Sheets.
+
+The first method is using a Google Script:
+```
+/*
+ * XOR two numbers
+ * @param {Number} a - A hexadecimal number to XOR
+ * @param {Number} b - A hexadecimal number to XOR
+ * @returns {Number} - Hexadecimal result of XORing a and b
+ */
+function XOR(a, b) {
+    return (parseInt(a, 16) ^ parseInt(b, 16)).toString(16);
+}
+```
+
+This function is incredibly simple. Ignoring the conversion functions, we get
+```
+function XOR(a, b) {
+    return a ^ b;
+}
+```
+
+`^` is the XOR operator in Javascript, which is what Google Scripts uses.
+
+To use this in Google Sheets, all I have to do is do `=XOR(A1, B1)`, where A1 and B1 are the cells containing the hexadecimal values I want to XOR.
+
+Total runtime after generating a new key or message (meaning a full recalculation) is almost 30 minutes. This is because it takes for Google Scripts to "prepare to run", and only a certain amount of parallel executions can occur. Also, Google Sheets attempts to calculate all the values all at once, but has to recalculate again after the first couple things finish. It's pretty bad at figuring out what cells depend on what cells :(
+
+Therefore, we need a faster XOR method. We can take advantage of a property of XORing two one byte hexadecimal values.
+
+Let's say we have two numbers: 0xAB and 0xCD. Convert this into binary: 10101011
+and 11001101. When we XOR this, we're actually XORing each bit individually. The other bits in the number don't really matter.
+
+A property of expressing a byte as a hexadecimal is that each digit corresponds to four bits. The first digit is the first four bits, and the last digit is the last four bits. Therefore, A is 1010, B is 1011, C is 1100, and D is 1101. We can XOR A and C, then XOR B and D. We then cat the two results together.
+
+A visual example:
+```
+0xAB ^ 0xCD
+10101011 ^ 11001101
+CONCAT(1010 ^ 1100, 1011 ^ 1101)
+```
+
+Since we are now XORing two one digit numbers, there are a total of 256 different XOR input values (16^2). This makes it incredibly easy to do a lookup table.
+
+An excerpt:
+```
+Input	XOR
+00	0
+01	1
+02	2
+03	3
+04	4
+05	5
+06	6
+07	7
+08	8
+09	9
+0A	A
+0B	B
+0C	C
+0D	D
+0E	E
+0F	F
+10	1
+11	0
+...
+```
