@@ -362,6 +362,14 @@ Breaking it down:
 2. We then XOR it using our fast XOR method (`VLOOKUP(LEFT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&LEFT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&RIGHT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)`)<br />
 3. We then XOR it with the other parts, because that's how addition in a Galois Field works.
 
+Converting this into using the XOR formula:
+
+```
+=XOR(XOR(XOR(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE), VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)),AESXORTable,2,FALSE)), N25), N26)
+```
+
+Much easier :)
+
 ## AddRoundKey
 We use the fast XOR method to XOR the round key with the current state.
 
@@ -377,3 +385,30 @@ Although we could hardcode the rcon values, where's the fun in that?
 ```
 
 C19 is a cell containing the text "Round 1". RIGHT(C19, 1) extracts the right most number, which is the round number. It then looks up the value in a lookup table to get the rcon value.
+
+## Key Schedule / Key Expansion
+The formula for key expansion differs between columns. Below is the formula for the first column:
+
+```
+=VLOOKUP(LEFT(VLOOKUP(LEFT(VLOOKUP(I16,'AES-128 Tables'!$A$2:$B$257,2,TRUE))&LEFT(F15),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(VLOOKUP(I16,'AES-128 Tables'!$A$2:$B$257,2,TRUE))&RIGHT(F15),AESXORTable,2,FALSE))&LEFT($Z$19),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(VLOOKUP(LEFT(VLOOKUP(I16,'AES-128 Tables'!$A$2:$B$257,2,TRUE))&LEFT(F15),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(VLOOKUP(I16,'AES-128 Tables'!$A$2:$B$257,2,TRUE))&RIGHT(F15),AESXORTable,2,FALSE))&RIGHT($Z$19),AESXORTable,2,FALSE)
+```
+
+We have to work from the inside to outside. At the top level, it XORs two numbers. The first number is the result of XORing two numbers as defined above, when I explained the key expansion step. The second number is the round constant.
+
+So, although it looks really complicated, most of it is just XOR overhead. If I were to use the XOR formula:
+
+```
+=XOR(XOR(I16, F15), $Z$19)
+```
+
+The formula for the rest of the columns are much easer.
+
+```
+=VLOOKUP(LEFT(F20)&LEFT(G16),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(F20)&RIGHT(G16),AESXORTable,2,FALSE)
+```
+
+Using the XOR formula:
+
+```
+XOR(F20, G16)
+```
