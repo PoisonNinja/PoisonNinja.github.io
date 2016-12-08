@@ -19,7 +19,7 @@ In 2003, the US government officially announced that AES could be used to protec
 
 Today, AES is one of the most popular block ciphers in existence due to it's high performance and security it provides. AES is implemented in nearly every language, and hardware acceleration is available on most processors. On x86, acceleration is provided by the AES-NI instruction set.
 
-AES is currently unbroken, with the only possible attacks based on attacking side-channel implementations. This means that the only attacks that work are on the implementation of AES such as hardware glitches and timing attacks. Other attacks are able to reduce the key space slightly from 2^128 to slightly lower, but brute forcing it would still take more time than the age of the universe.
+AES is currently unbroken, with the only possible attacks based on attacking side-channel implementations. This means that the only attacks that work are on the implementation of AES such as hardware glitches and timing attacks. Otherwise, brute forcing AES would take more time then the current age of the universe.
 
 # AES implementation
 AES uses four basic operations, grouped in rounds. The number of rounds depends on the AES bit size. The higher bit size, the more rounds.
@@ -51,7 +51,7 @@ The bytes in the plaintext and key are arranged in a 4x4 matrix, top to bottom, 
 ### sbox and inverse sbox
 A sbox is a table that takes an input value, looks it up, and outputs another value. The the inverse sbox takes the output from the sbox, and restores it to the original input value.
 
-The sbox hides relationships between the key and the output data.
+The sbox hides relationships between the key and the output data and makes linear analysis much harder to do.
 
 ![sbox](https://captanu.files.wordpress.com/2015/04/aes_sbox.jpg)
 
@@ -67,7 +67,7 @@ XOR is really important in cryptography because XOR is an easily reversible oper
 ### Galois / Finite Field
 In simple terms, a Finite Field is a matrix that has a maximum limit before values wrap around. Finite fields are defined by the equation p^k, where p is a prime and k is a positive integer. p is the characteristic of the finite field, because adding p copies of any number is equal to 0.
 
-A Galois Field is a finite field with characteristic 2. Galois Fields can be identified in the notation GF(x), where x is equal to 2^k.
+A Galois Field is a finite field with characteristic 2. Galois Fields can be identified with the notation GF(x), where x is equal to 2^k.
 
 There are only two operations in a finite field: addition and multiplication.
 
@@ -78,26 +78,39 @@ When the characteristic is 2, addition is simply just XORing the the values toge
 Multiplication in a finite field is much more complicated. First, multiply the numbers normally, such as in algebra. Then, divide that (because it won't fit into an 8 bit field) by a fixed number, known as an irreducible polynomial.
 
 ```
-x8 + x4 + x3 + x + 1 = 0x11b
+x8 + x4 + x3 + x + 1 = 0x11B
 ```
 
 We then divide the product of the two input numbers by this polynomial, and the remainder of the division is our product.
 
-In Java:
+In Javascript:
 
 ```
-public byte FFMul(unsigned byte a, unsigned byte b) {
-   unsigned byte aa = a, bb = b, r = 0, t;
-   while (aa != 0) {
-      if ((aa & 1) != 0)
-         r = r ^ bb;
-      t = bb & 0x80;
-      bb = bb << 1;
-      if (t != 0)
-         bb = bb ^ 0x1b;
-      aa = aa >> 1;
-   }
-   return r;
+/*
+ * Multiply two values in a Galois Field of size 2^8
+ * @param {Number} a - A hexadecimal number to multiply
+ * @param {Number} b - A hexadecimal number to multiply a by
+ * @returns {Number} - Result of multiplying a and b in a Galois field
+ */
+function GMUL(a, b) {
+    // Convert hex strings into decimal numbers
+    var a = parseInt(a, 16);
+    var b = parseInt(b, 16);
+    var v = new Number;
+	v = 0;
+	while (b != 0){
+		if (b & 1)
+			v ^= a;
+		b >>= 1;
+		if (a & (1 << (8 - 1))){
+			a <<= 1;
+			a ^= 0x11B;
+		} else {
+			a <<= 1;
+		}
+	}
+    // Convert number back to hex, uppercase, and pad with zeros
+	return pad(v.toString(16).toUpperCase(), 2);
 }
 ```
 
