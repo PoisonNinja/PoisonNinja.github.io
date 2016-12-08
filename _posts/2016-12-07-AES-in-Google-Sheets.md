@@ -275,6 +275,52 @@ Implemented in Google Sheets:
 
 where AESXORTable is a named range for the XOR lookup table.
 
+## SubBytes
+To do replace bytes using a sbox, we use VLOOKUP. sbox and inverse sbox is stored in the spreadsheet like this:
+
+```
+Input	sbox	Inverse sbox
+00	63	52
+01	7C	09
+02	77	6A
+03	7B	D5
+04	F2	30
+05	6B	36
+06	6F	A5
+07	C5	38
+08	30	BF
+```
+
+To lookup a value, we use VLOOKUP with the input value as the key. If I was looking for an sbox value, I would do:
+
+```
+=VLOOKUP(V15,'AES-128 Tables'!$A$2:$B$257,2, TRUE)
+```
+
+If I wanted to look for an inverse sbox value:
+
+```
+=VLOOKUP(V15,'AES-128 Tables'!$A$2:$B$257, 3, TRUE)
+```
+
+Notice that I changed the column number from 2 to 3.
+
+## ShiftRows
+This is incredibly easy to do in spreadsheets. All you have to do is set one cell to another cell.
+
+```
+=A15
+```
+
+To do the shift, instead of setting it equal to the cell 4 columns to the left, set it to 4 - (shift).
+
+```
+=A1 =A2 =A3 =A4
+=B2 =B3 =B4 =B1
+=C3 =C4 =C1 =C2
+=C4 =C1 =C2 =C3
+```
+
 ## MixColumns
 MixColumns is implemented in Google Sheets using a lookup table. Generally speaking, in Google Sheets, it's faster to use builtin functions rather than using a script, because scripts take a while to run.
 
@@ -310,3 +356,19 @@ Breaking it down:
 1. We first find the results of the multiplication using VLOOKUP (`VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE)`)
 2. We then XOR it using our fast XOR method (`VLOOKUP(LEFT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&LEFT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&RIGHT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)`)
 3. We then XOR it with the other parts, because that's how addition in a Galois Field works.
+
+## AddRoundKey
+We use the fast XOR method to XOR the round key with the current state.
+
+```
+=VLOOKUP(LEFT(F9)&LEFT(F15),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(F9)&RIGHT(F15),AESXORTable,2,FALSE)
+```
+
+## rcon
+Although we could hardcode the rcon values, where's the fun in that?
+
+```
+=VLOOKUP(RIGHT(C19,1),'AES-128 Tables'!$K$2:$L$12,2,FALSE)
+```
+
+C19 is a cell containing the text "Round 1". RIGHT(C19, 1) extracts the right most number, which is the round number. It then looks up the value in a lookup table to get the rcon value.
