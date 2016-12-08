@@ -185,10 +185,16 @@ AddRoundKey remains the same (XOR property, remember).
 # Implementation in Google Sheets/Excel
 For this, there were two main concerns: speed and accuracy. I will not go over every single detail, but instead go over some of the optimizations and quirks I had to deal with.
 
+## Useful stuff
+* HEX2DEC - Converts a decimal number to a hex string
+* DEC2HEX - Converts a hexadecimal string to a number
+* The & operator - It concats two strings together. For example, "A" & "B" becomes "AB"
+
 ## Fast XOR
 There are two ways to do XOR in Google Sheets.
 
 The first method is using a Google Script:
+
 ```
 /*
  * XOR two numbers
@@ -202,6 +208,7 @@ function XOR(a, b) {
 ```
 
 This function is incredibly simple. Ignoring the conversion functions, we get
+
 ```
 function XOR(a, b) {
     return a ^ b;
@@ -222,6 +229,7 @@ and 11001101. When we XOR this, we're actually XORing each bit individually. The
 A property of expressing a byte as a hexadecimal is that each digit corresponds to four bits. The first digit is the first four bits, and the last digit is the last four bits. Therefore, A is 1010, B is 1011, C is 1100, and D is 1101. We can XOR A and C, then XOR B and D. We then cat the two results together.
 
 A visual example:
+
 ```
 0xAB ^ 0xCD
 10101011 ^ 11001101
@@ -231,6 +239,7 @@ CONCAT(1010 ^ 1100, 1011 ^ 1101)
 Since we are now XORing two one digit numbers, there are a total of 256 different XOR input values (16^2). This makes it incredibly easy to do a lookup table.
 
 An excerpt:
+
 ```
 Input	XOR
 00	0
@@ -265,3 +274,37 @@ Implemented in Google Sheets:
 ```
 
 where AESXORTable is a named range for the XOR lookup table.
+
+## MixColumns
+MixColumns is implemented in Google Sheets using a lookup table. Generally speaking, in Google Sheets, it's faster to use builtin functions rather than using a script, because scripts take a while to run.
+
+Since the MixColumns step only multiplies by 02, 03, 09, 0B, 0D, and 0E, we can build a lookup table. Total, there are 16^2 * 6 values in the lookup table, or 1,536 values. The table is organized with the input value as the index, the number to multiply as the column identifier, and the intersection of those is the result of a multiplication.
+
+An excerpt is below:
+
+```
+Input	2	3	09	0B	 0D	0E
+00	00	00	00	00	00	00
+01	02	03	09	0B	0D	0E
+02	04	06	12	16	1A	1C
+03	06	05	1B	1D	17	12
+04	08	0C	24	2C	34	38
+05	0A	0F	2D	27	39	36
+06	0C	0A	36	3A	2E	24
+07	0E	09	3F	31	23	2A
+08	10	18	48	58	68	70
+09	12	1B	41	53	65	7E
+```
+
+If I wanted to multiply 01 by 09, I would find 01 on the left most column, then find the corresponding value in the 09 column. Thus, the answer would by 09.
+
+The formula used for each cell in the MixColumns step is as follows:
+
+```
+=VLOOKUP(LEFT(VLOOKUP(LEFT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&LEFT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&RIGHT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)),AESXORTable,2,FALSE))&LEFT(VLOOKUP(LEFT(N25)&LEFT(N26),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(N25)&RIGHT(N26),AESXORTable,2,FALSE)),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(VLOOKUP(LEFT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&LEFT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE))&RIGHT(VLOOKUP(N24,'AES-128 Tables'!$A$1:$E$257,5,TRUE)),AESXORTable,2,FALSE))&RIGHT(VLOOKUP(LEFT(N25)&LEFT(N26),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(N25)&RIGHT(N26),AESXORTable,2,FALSE)),AESXORTable,2,FALSE)
+```
+
+It looks really long, but most of it is overhead from the fast XOR method.
+
+Breaking it down:
+1. We first find the results of the multiplication using VLOOKUP (`VLOOKUP(N23,'AES-128 Tables'!$A$1:$E$257,4,TRUE)`)
