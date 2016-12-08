@@ -42,6 +42,7 @@ The bytes in the plaintext and key are arranged in a 4x4 matrix, top to bottom, 
 ```
 
 ## Prerequisite Stuff
+
 ### sbox and inverse sbox
 A sbox is a table that takes an input value, looks it up, and outputs another value. The the inverse sbox takes the output from the sbox, and restores it to the original input value.
 
@@ -98,6 +99,7 @@ Each round of AES uses a different key. Each key is derived from the previous ke
 For AES-128, we need to expand a 128-bit key to 10 different 128-bit keys
 
 ## Operations
+
 ### SubBytes
 SubBytes is one of the most simple operations. Here, we simply replace each byte with the corresponding value in the sbox.
 
