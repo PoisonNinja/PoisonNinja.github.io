@@ -253,3 +253,15 @@ Input	XOR
 11	0
 ...
 ```
+
+So, when we want to XOR two numbers, we first look up the left two digits, then the right to digits.
+
+Example: 0xAB and 0xCD. First, we lookup what is A and C XORed. In the table, we find AC is 6. Then, we lookup what B and D is XORed, which is 6. Then, we concat those together to get 66. Therefore, 0xAB ^ 0xCD is 0x66.
+
+Implemented in Google Sheets:
+
+```
+=VLOOKUP(LEFT(R19)&LEFT(F19),AESXORTable,2,FALSE)&VLOOKUP(RIGHT(R19)&RIGHT(F19),AESXORTable,2,FALSE)
+```
+
+where AESXORTable is a named range for the XOR lookup table.
