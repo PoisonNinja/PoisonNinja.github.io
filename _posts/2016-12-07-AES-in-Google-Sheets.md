@@ -1,6 +1,8 @@
 ---
 layout: post
 title: AES-128 in Google Sheets
+date: 2016-12-07 00:00:00
+summary: An overview of implementing AES-128 in Google Sheets
 ---
 
 # What is AES?
